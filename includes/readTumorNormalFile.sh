@@ -26,7 +26,7 @@ function readTumorNormalFile {
 		
 		firstSign=`echo $line | awk '{print substr(\$0,0,1);}'`;
 
-		if [ "$firstSign" != "#" ]; then
+		if [[ "$firstSign" != "#" ]]; then
 			
 			TUMOR[${count}]=`echo $line | awk 'BEGIN{FS="#"}{print \$1}'`;
 	          NORMAL[${count}]=`echo $line | awk 'BEGIN{FS="#"}{print \$2}'`;

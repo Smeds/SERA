@@ -1,3 +1,5 @@
+#!/usr/bin/python2.7
+
 from __future__ import division
 import csv
 import re
@@ -27,10 +29,10 @@ headerlist = []
 
 #Read every row in inputfile
 for row in reader:
-	
+
 	#Skip first comment row
 	if not row[0].startswith("#"):
-		
+
 		#Find header row and append each column to headerlist
 		if row[0].startswith("contig"):
 			for headername in row:
@@ -40,7 +42,7 @@ for row in reader:
 		else:
 			ofile.write(row[0]+"\t"+row[1]+"\t"+row[1]+"\t"+row[3]+"\t"+row[4]+"\t"+"comments: ")
 
-			#Write mutect info	
+			#Write mutect info
 			for x in range(5, 51):
 				ofile.write(headerlist[x]+"="+row[x]+" ")
 

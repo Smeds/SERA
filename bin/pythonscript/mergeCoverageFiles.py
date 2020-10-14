@@ -1,3 +1,5 @@
+#!/usr/bin/python2.7
+
 import argparse
 import re
 from os import walk
@@ -23,7 +25,7 @@ for (dirpath, dirnames, filenames) in walk (args.directory):
 # Go through all files in the list
 for f in files:
     fn = args.directory+f
-    
+
     # Extract sample name from filename
     idSplit = f.split(".")
     genes['sample'].append(idSplit[0])
@@ -34,19 +36,19 @@ for f in files:
             if not re.match('#', line):
                 line = line.rstrip('\r\n')  # Remove new line character
                 lineSplit = line.split("\t")  # Split line by tab
-                tup = lineSplit[1]+"#"+lineSplit[2]+"#"+lineSplit[3]+"#"+lineSplit[4] 
+                tup = lineSplit[1]+"#"+lineSplit[2]+"#"+lineSplit[3]+"#"+lineSplit[4]
                 if tup in genes:
                     genes[tup].append(lineSplit[5])
                 else:
                     genes[tup] = []
                     genes[tup].append(lineSplit[5])
-                    
+
 with (open(args.output, mode = 'w'))as outfile:
     outStr = "Gene\tChromosome\tStart\tEnd"
     for sample in genes['sample']:
         outStr += "\t"+sample
     outfile.write(outStr+"\n")
-    
+
     for region in genes:
         if re.search("#", str(region)):
             infoSplit = region.split("#")

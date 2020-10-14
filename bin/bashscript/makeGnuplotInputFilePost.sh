@@ -2,19 +2,22 @@
 #
 # Script to export aligment archives as BAM-files.
 #
-#SBATCH -p devcore  -n 1
+#SBATCH -p core  -n 1
 #SBATCH -t 15:00
 ##SBATCH --qos=short
+#SBATCH --mail-type=FAIL --mail-user=bioinfo-clinical-genomics-uu@googlegroups.com
+
+. $SERA_PATH/includes/load_modules.sh
 
 # Include functions
 . $SERA_PATH/includes/logging.sh;
 
-if [ ! -d $ROOT_PATH/plotPdfs ]; then
+if [[ ! -d $ROOT_PATH/plotPdfs ]]; then
 	mkdir $ROOT_PATH/plotPdfs;
 fi
 
-if [ ${READS} == "true" ]; then
-	if [ ${CALL_TYPE} == "h.sapiens" ]; then
+if [[ ${READS} == "true" ]]; then
+	if [[ ${CALL_TYPE} == "h.sapiens" ]]; then
 		FILE="$ROOT_PATH/plotPdfs/plotFile.txt";
 		# if empty, create file
 		if [[ ! -e $FILE || ! -z $FORCE ]]; then
@@ -43,7 +46,7 @@ if [ ${READS} == "true" ]; then
 					# loop over all files and add this plot type
 					samples=( `ls $ROOT_PATH/plotValues/ | grep $type | awk '{split($0,a,"."); print a[1]}' | uniq | xargs` );
 					for SAMPLEID in ${samples[@]}; do
-						if [ $added != $SAMPLEID ]; then
+						if [[ $added != $SAMPLEID ]]; then
 							CONCAT="$CONCAT:$ROOT_PATH/plotValues/${SAMPLEID}.${type},${SAMPLEID}";
 						fi
 					done
@@ -56,7 +59,7 @@ if [ ${READS} == "true" ]; then
 	fi
 fi
 
-if [ "$?" != "0" ]; then
+if [[ "$?" != "0" ]]; then
 	ErrorLog $REFSEQ "Failed in creating gnuplot input file";
 else
 	SuccessLog $REFSEQ "Inputfile created and can be located at $FILE for further modifications";

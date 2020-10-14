@@ -1,3 +1,5 @@
+#!/usr/bin/python2.7
+
 """
 
 Script for filtering and conveting pindel vcf output to annovar input

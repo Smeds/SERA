@@ -1,3 +1,5 @@
+#!/usr/bin/python2.7
+
 from __future__ import division
 import csv
 import re
@@ -50,7 +52,7 @@ for row in reader:
 		for runner in transcripts:
 			ofile.write(runner+"\t")
 
-		ofile.write("\n")										
+		ofile.write("\n")
 
 ifile.close()
 ofile.close()

@@ -12,8 +12,8 @@ function renderList {
 	for i in $(seq 0 6 $NUMBOFSTEPS); do
 		echo -n "${steps[$i]} ";
 		echo -n "${steps[${i}+1]} ";
-		if [ ${steps[${i}+2]} = "on" ]; then echo "[ON]";
-		elif [ ${steps[${i}+2]} = "off" ]; then echo "[OFF]";
+		if [[ ${steps[${i}+2]} = "on" ]]; then echo "[ON]";
+		elif [[ ${steps[${i}+2]} = "off" ]]; then echo "[OFF]";
 		else echo "[UNAVAILABLE]";
 		fi
 	done;
@@ -34,9 +34,9 @@ function renderList {
 			for i in $(seq 0 6 $NUMBOFSTEPS); do
 				case ${steps[$i]} in
 					"$inp") 
-						if [ ${steps[$i+2]} == "on" ]; then
+						if [[ ${steps[$i+2]} == "on" ]]; then
 							steps[$i+2]="off";
-						elif [ ${steps[$i+2]} == "off" ]; then
+						elif [[ ${steps[$i+2]} == "off" ]]; then
 							steps[$i+2]="on";
 						fi
 					;;

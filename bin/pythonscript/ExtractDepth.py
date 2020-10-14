@@ -1,3 +1,5 @@
+#!/usr/bin/python2.7
+
 import argparse
 import re
 
@@ -11,6 +13,7 @@ parser.add_argument('-minRD', '--minRD', help = 'Minimum read depth to be counte
 parser.add_argument('-s', '--sample', help = 'Sample ID', type = str, required = True)
 parser.add_argument('-chr2nc', '--chr2nc', help = 'File with conversion between NC-number and chr', type = str, required = True)
 parser.add_argument('-header', '--header', help = 'Set if you want header printed. Default: False', action = "store_true")
+
 
 args = parser.parse_args()
 
@@ -90,31 +93,52 @@ with open(args.filteredAnnovarfile, 'r') as filteredAnnovar:
             ref = lineSplit[4]
             var = lineSplit[5]
 
-            # Add all known mutations to the mutation dictionary which are NOT indels
-            if not ("|" in lineSplit[24]) and not ("|" in lineSplit[25]):
-                if not chrom in mutations:
-                    mutations[chrom] = {}
+            # Add all known mutations to the mutation dictionary which are NOT from Pindel
+
+            if not chrom in mutations:
+                mutations[chrom] = {}
+                mutations[chrom][start] = {}
+                mutations[chrom][start][ref] = {}
+                mutations[chrom][start][ref][var] = {}
+                if not ("+" in lineSplit[24]) and not ("+" in lineSplit[25]):
+                    mutations[chrom][start][ref][var]["bwa"] = lineSplit
+                else:
+                    mutations[chrom][start][ref][var]["pindel"] = lineSplit
+
+            else:
+                if not start in mutations[chrom]:
                     mutations[chrom][start] = {}
                     mutations[chrom][start][ref] = {}
                     mutations[chrom][start][ref][var] = {}
-                    mutations[chrom][start][ref][var]["line"] = lineSplit
+                    if not ("+" in lineSplit[24]) and not ("+" in lineSplit[25]):
+                        mutations[chrom][start][ref][var]["bwa"] = lineSplit
+                    else:
+                        mutations[chrom][start][ref][var]["pindel"] = lineSplit
+
+
                 else:
-                    if not start in mutations[chrom]:
-                        mutations[chrom][start] = {}
+                    if not ref in mutations[chrom][start]:
                         mutations[chrom][start][ref] = {}
                         mutations[chrom][start][ref][var] = {}
-                        mutations[chrom][start][ref][var]['line'] = lineSplit
+                        if not ("+" in lineSplit[24]) and not ("+" in lineSplit[25]):
+                            mutations[chrom][start][ref][var]["bwa"] = lineSplit
+                        else:
+                            mutations[chrom][start][ref][var]["pindel"] = lineSplit
+
 
                     else:
-                        if not ref in mutations[chrom][start]:
-                            mutations[chrom][start][ref] = {}
+                        if not var in mutations[chrom][start][ref]:
                             mutations[chrom][start][ref][var] = {}
-                            mutations[chrom][start][ref][var]['line'] = lineSplit
-
+                            if not ("+" in lineSplit[24]) and not ("+" in lineSplit[25]):
+                                mutations[chrom][start][ref][var]["bwa"] = lineSplit
+                            else:
+                                mutations[chrom][start][ref][var]["pindel"] = lineSplit
                         else:
-                            if not var in mutations[chrom][start][ref]:
-                                mutations[chrom][start][ref][var] = {}
-                                mutations[chrom][start][ref][var]['line'] = lineSplit
+                            if not ("+" in lineSplit[24]) and not ("+" in lineSplit[25]):
+                                mutations[chrom][start][ref][var]["bwa"] = lineSplit
+                            else:
+                                mutations[chrom][start][ref][var]["pindel"] = lineSplit
+
 
     # Check if the filteredAnnovarfile is closed, if not close it
     if not filteredAnnovar.closed:
@@ -129,7 +153,7 @@ with open(args.variationfile, 'r') as variationfile:
             commentStr = "#Sample\tGene\tCosmic_id\tReport\tFound"
             for mRD in minRDs:
                 commentStr += "\tMin_read_depth" + mRD
-                commentStr += "\tTotal_read_depth\tChr\tStart\tEnd\tReference\tVariant\tVariant_read_depth\tReference_read_depth\tVariant_allele_ratio\tRatio_in_1000G\tExonic_type\tCDS_change\tAA_change\tReference_plus_amplicons\tReference_minus_amplicons\tVariant_plus_amplicons\tVariant_minus_amplicons\tTranscript\tProtein\tRef_amplicons\tVar_amplicons"
+                commentStr += "\tTotal_read_depth\tChr\tStart\tEnd\tReference\tVariant\tVariant_read_depth\tReference_read_depth\tVariant_allele_ratio\tRatio_in_1000G\tExonic_type\tCDS_change\tAA_change\tReference_plus_amplicons\tReference_minus_amplicons\tVariant_plus_amplicons\tVariant_minus_amplicons\tTranscript\tProtein\tRef_amplicons\tVar_amplicons\tAll_transcripts"
                 outputfile.write (commentStr + "\n")
 
         # Go through the file line by line
@@ -184,62 +208,68 @@ with open(args.variationfile, 'r') as variationfile:
                                     elif genes[chrom][s][e].startswith("ERBB2"):
                                         nm = "NM_001289937.1"
                                         np = "NP_001276866.1"
+                                    elif genes[chrom][s][e].startswith("BRCA1"):
+                                        nm = "NM_007294.3"
+                                        np = "NP_009225.1"
+                                        flag = 3
+                                    elif genes[chrom][s][e].startswith("BRCA2"):
+                                        nm = "NM_000059.3"
+                                        np = "NP_000050.2"
+                                        flag = 3
                                     cds = "-"
                                     aa = "-"
+
+
+                                    # Check if variant in pindels hash
                                     if not "not analyzable" in found and chrom in mutations and pos in mutations[chrom]:
                                         for ref in mutations[chrom][pos]:
                                             for var in mutations[chrom][pos][ref]:
-                                                mutationLine = mutations[chrom][pos][ref][var]['line']
-                                                # Look through all reported transcripts and report the cds and aa change for the right transcript
-                                                for transcript in mutationLine[32:]:
-                                                    nmNumber = nm.split(".")  # split on dot to exclude version number
-                                                    if nmNumber[0] in transcript:  # Check that it is the correct transcript
-                                                        transcript = transcript.split(":")
-                                                        if len(transcript) >= 5:  # Check that both aa and cds info is available
-                                                            cds = transcript[3]
-                                                            aa = transcript[4]
-                                                        elif len(transcript) >= 4:  # If not check if at least cds info is available
-                                                            cds = transcript[3]
+                                                if not "pindel" in mutations[chrom][pos][ref][var]:
+                                                    mutationLine = mutations[chrom][pos][ref][var]["bwa"]
 
-                                                # Check read depth for mutation may differ from variation file if it is from pindel or have several variants
+                                                    # Save all transcripts without gene name
+                                                    allTrans = mutationLine[32]
+                                                    allTrans = re.sub('^[A-Z0-9]+:', "", allTrans)
+                                                    # Look through all reported transcripts and report the cds and aa change for the right transcript
+                                                    for transcript in mutationLine[32:]:
+                                                        # If it's not the first transcript add to all transcript column
+                                                        if not re.match(transcript, mutationLine[32]):
+                                                            transInfo = transcript
+                                                            transInfo = re.sub('^[A-Z0-9]+:', "", transInfo)
+                                                            allTrans += "|" + transInfo
 
-                                                okDepth = ""
-                                                depth = mutationLine[12]
-                                                for mRD in minRDs:
-                                                    if int(mutationLine[12]) >= int(mRD):
-                                                        okDepth += "ok\t"
+                                                        nmNumber = nm.split(".")  # split on dot to exclude version number
+                                                        if nmNumber[0] in transcript:  # Check that it is the correct transcript
+                                                            transcript = transcript.split(":")
+                                                            if len(transcript) >= 5:  # Check that both aa and cds info is available
+                                                                cds = transcript[3]
+                                                                aa = transcript[4]
+                                                            elif len(transcript) >= 4:  # If not check if at least cds info is available
+                                                                cds = transcript[3]
+
+                                                    # Check read depth for mutation may differ from variation file if it is from pindel or have several variants
+
+                                                    okDepth = ""
+                                                    depth = mutationLine[12]
+                                                    for mRD in minRDs:
+                                                        if int(mutationLine[12]) >= int(mRD):
+                                                            okDepth += "ok\t"
+                                                        else:
+                                                            okDepth += "low\t"
+                                                            if mRD == minRDs[0]:
+                                                                found = "not analyzable"
+
+                                                    if "not analyzable" in found:
+                                                        outStr = args.sample + "\t" + genes[chrom][s][e] + "\t-\t1\t" + found + "\t" + okDepth + lineSplit[0] + "\t" + chrom + "\t" + str(pos) + "\t" + str(pos) + "\t" + lineSplit[5] + "\tN\t-\t-\t-\t-\t-\t-\t-\t-\t-\t-\t-\t" + nm + "\t" + np + "\t-\t" + allTrans
+                                                        outputfile.write(outStr + "\n")
                                                     else:
-                                                        okDepth += "low\t"
-                                                        if mRD == minRDs[0]:
-                                                            found = "not analyzable"
+                                                        ampliconInfo = mutationLine[28] + "\t" + mutationLine[29] + "\t" + mutationLine[26] + "\t" + mutationLine[27]
+                                                        ampliconColumns = mutationLine[31] + "\t" + mutationLine[30]
 
-                                                if "not analyzable" in found:
-                                                    outStr = args.sample + "\t" + genes[chrom][s][e] + "\t-\t1\t" + found + "\t" + okDepth + lineSplit[0] + "\t" + chrom + "\t" + str(pos) + "\t" + str(pos) + "\t" + lineSplit[5] + "\tN\t-\t-\t-\t-\t-\t-\t-\t-\t-\t-\t-\t" + nm + "\t" + np + "\t-\t-"
-                                                    outputfile.write(outStr + "\n")
-                                                else:
-                                                    # If mutation info comes from pindel change amplicon extraction fields
-                                                    ampliconInfo = mutationLine[28] + "\t" + mutationLine[29] + "\t" + mutationLine[26] + "\t" + mutationLine[27]
-                                                    ampliconColumns = mutationLine[31] + "\t" + mutationLine[30]
-#                                                    if "pindel" in mutations[chrom][pos][ref][var]['from']:
-#                                                        flag = 2
-#                                                        if "+" in mutationLine[24]:  # Insertion
-#                                                            ampSplit = mutationLine[24].split("|")
-#                                                            ampliconInfo = "-\t-\t" + ampSplit[0] + "\t" + ampSplit[1]
-#                                                            ampliconColumns = "-\t" + mutationLine[24]
-
-#                                                        elif "+" in mutationLine[25]:
-#                                                            ampSplit = mutationLine[25].split("|")
-#                                                            ampliconInfo = "-\t-\t" + ampSplit[0] + "\t" + ampSplit[1]
-#                                                            ampliconColumns = "-\t" + mutationLine[25]
-
-                                                    outStr = args.sample + "\t" + genes[chrom][s][e] + "\t-\t" + str(flag) + "\tyes\t" + okDepth + depth + "\t" + chrom + "\t" + str(pos) + "\t" + mutationLine[3] + "\t" + ref + "\t" + var + "\t" + mutationLine[11] + "\t" + mutationLine[10] + "\t" + mutationLine[9] + "\t" + mutationLine[13] + "\t" + mutationLine[8] + "\t" + cds + "\t" + aa + "\t" + ampliconInfo + "\t" + nm + "\t" + np + "\t" + ampliconColumns
-                                                    outputfile.write(outStr + "\n")
+                                                        outStr = args.sample + "\t" + genes[chrom][s][e] + "\t-\t" + str(flag) + "\tyes\t" + okDepth + depth + "\t" + chrom + "\t" + str(pos) + "\t" + mutationLine[3] + "\t" + ref + "\t" + var + "\t" + mutationLine[11] + "\t" + mutationLine[10] + "\t" + mutationLine[9] + "\t" + mutationLine[13] + "\t" + mutationLine[8] + "\t" + cds + "\t" + aa + "\t" + ampliconInfo + "\t" + nm + "\t" + np + "\t" + ampliconColumns + "\t" + allTrans
+                                                        outputfile.write(outStr + "\n")
                                     else:
-                                        # Output all positions in KIT and PDGFRA independent of mutation or not
-                                        if genes[chrom][s][e].startswith("KIT") or genes[chrom][s][e].startswith("PDGFRA"):
-                                            outStr = args.sample + "\t" + genes[chrom][s][e] + "\t-\t" + str(flag) + "\t" + found + "\t" + okDepth + depth + "\t" + chrom + "\t" + str(pos) + "\t" + str(pos) + "\t" + lineSplit[5] + "\tN\t-\t-\t-\t-\t-\t-\t-\t-\t-\t-\t-\t" + nm + "\t" + np + "\t-\t-"
+                                        # Output all positions in KIT, PDGFRA, BRCA1 and BRCA2 independent of mutation or not
+                                        if genes[chrom][s][e].startswith("KIT") or genes[chrom][s][e].startswith("PDGFRA") or genes[chrom][s][e].startswith("BRCA1") or genes[chrom][s][e].startswith("BRCA2"):
+                                            outStr = args.sample + "\t" + genes[chrom][s][e] + "\t-\t" + str(flag) + "\t" + found + "\t" + okDepth + depth + "\t" + chrom + "\t" + str(pos) + "\t" + str(pos) + "\t" + lineSplit[5] + "\tN\t-\t-\t-\t-\t-\t-\t-\t-\t-\t-\t-\t" + nm + "\t" + np + "\t-\t-\t-"
                                             outputfile.write(outStr + "\n")
-
-
-
-

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -l
 
 # load uppmax modules
 module load bioinfo-tools
@@ -11,3 +11,5 @@ module load python/2.7
 module load FastQC/0.11.2
 module load cutadapt/1.8.0
 module load bwa/0.7.12
+module load trimmomatic/0.32 
+module load gnuparallel/20150522

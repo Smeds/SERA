@@ -1,3 +1,5 @@
+#!/usr/bin/python2.7
+
 import csv
 import re
 import argparse
@@ -9,7 +11,7 @@ Script for converting Pindel Annovar output to readable output
 
 '''
 
-def printToFile(args, RDs, chr2nc, ofile, row, cosmicID, tInfo, cdsInfo, aaInfo, stPlus, stMinus):
+def printToFile(args, RDs, chr2nc, ofile, row, cosmicID, tInfo, cdsInfo, aaInfo, stPlus, stMinus, allTrans):
     # Print to file
     flag = 2
     if row[6].startswith("ERBB2"):
@@ -34,7 +36,7 @@ def printToFile(args, RDs, chr2nc, ofile, row, cosmicID, tInfo, cdsInfo, aaInfo,
             varType = row[8]
 
     chr = "chr" + row[1]
-    ofile.write("\t" + row[12] + "\t" + chr2nc[chr] + "\t" + row[2] + "\t" + row[3] + "\t" + row[4] + "\t" + row[5] + "\t" + row[11] + "\t" + row[10] + "\t" + row[9] + "\t" + row[13] + "\t" + varType + "\t" + cdsInfo + "\t" + aaInfo + "\t-\t-\t" + str(stPlus) + "\t" + str(stMinus) + "\t" + tInfo + "\t-\t-\t" + str(stPlus) + "|" + str(stMinus) + "\n")
+    ofile.write("\t" + row[12] + "\t" + chr2nc[chr] + "\t" + row[2] + "\t" + row[3] + "\t" + row[4] + "\t" + row[5] + "\t" + row[11] + "\t" + row[10] + "\t" + row[9] + "\t" + row[13] + "\t" + varType + "\t" + cdsInfo + "\t" + aaInfo + "\t-\t-\t" + str(stPlus) + "\t" + str(stMinus) + "\t" + tInfo + "\t-\t-\t" + str(stPlus) + "|" + str(stMinus) + "\t" + str(allTrans) + "\n")
 
 
 
@@ -113,6 +115,13 @@ with open (args['outputfile'], 'w') as ofile:
                             stPlus = stInfo[0]
                             stMinus = stInfo[1]
 
+                        allTrans = row[32]
+                        allTrans = re.sub('^[A-Z0-9]+:', "", allTrans)
+                        for i in range(33, len(row)):
+                            transInfo = row[i]
+                            transInfo = re.sub('^[A-Z0-9]+:', "", transInfo)
+                            allTrans += "|" + transInfo
+
                         # Extract info about changes
                         transriptInfo = row[32].split(":")
                         # transriptInfo = row[26].split(":")
@@ -134,12 +143,12 @@ with open (args['outputfile'], 'w') as ofile:
 
                                 if exonInfo in genes[row[6].lower()]:  # Check if the variant is located within the correct exons
                                     if done == 0:
-                                        printToFile(args, RDs, chr2nc, ofile, row, cosmicID, tInfo, cdsInfo, aaInfo, stPlus, stMinus)
+                                        printToFile(args, RDs, chr2nc, ofile, row, cosmicID, tInfo, cdsInfo, aaInfo, stPlus, stMinus, allTrans)
                                         done = 1
 
                         if re.match("all", genes[row[6].lower()]) or re.match("-", genes[row[6].lower()]):
                             if done == 0:
-                                printToFile(args, RDs, chr2nc, ofile, row, cosmicID, tInfo, cdsInfo, aaInfo, stPlus, stMinus)
+                                printToFile(args, RDs, chr2nc, ofile, row, cosmicID, tInfo, cdsInfo, aaInfo, stPlus, stMinus, allTrans)
                                 done = 1
 
                         if ":" in genes[row[6].lower()]:
@@ -168,7 +177,7 @@ with open (args['outputfile'], 'w') as ofile:
                                             for end in regions[row[1]][start]:
                                                 if int(row[3]) <= end:
                                                     if done == 0:
-                                                        printToFile(args, RDs, chr2nc, ofile, row, cosmicID, tInfo, cdsInfo, aaInfo, stPlus, stMinus)
+                                                        printToFile(args, RDs, chr2nc, ofile, row, cosmicID, tInfo, cdsInfo, aaInfo, stPlus, stMinus, allTrans)
                                                         done = 1
 
 

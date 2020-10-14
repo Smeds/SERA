@@ -1,3 +1,5 @@
+#!/usr/bin/python2.7
+
 import csv
 import re
 import argparse
@@ -50,12 +52,12 @@ with open(args['chr2nc'], 'r') as cnfile:
         cnfile.close()
 
 with open (args['outputfile'], 'w') as ofile:
-    with open(args['inputfile'], 'r') as ifile:         
+    with open(args['inputfile'], 'r') as ifile:
     # Print header
 #         ofile.write("#Sample\tGene\tCosmic_id\tReport\tFound")
 #         for rd in RDs:
 #             ofile.write("\t"+rd)
-#         ofile.write("\tTotal_read_depth\tChr\tStart\tEnd\tReference\tVariant\tVariant_read_depth\tReference_read_depth\tVariant_allele_ratio\tExonic_type\tCDS_change\tAA_change\tReference_plus_amplicons\tReference_minus_amplicons\tVariant_plus_amplicons\tVariant_minus_amplicons\tTranscript\tProtein\tRef_amplicons\tVar_amplicons\n")    
+#         ofile.write("\tTotal_read_depth\tChr\tStart\tEnd\tReference\tVariant\tVariant_read_depth\tReference_read_depth\tVariant_allele_ratio\tExonic_type\tCDS_change\tAA_change\tReference_plus_amplicons\tReference_minus_amplicons\tVariant_plus_amplicons\tVariant_minus_amplicons\tTranscript\tProtein\tRef_amplicons\tVar_amplicons\n")
         # Read every row in inputfile
         for line in ifile:
             line = line.rstrip('\r\n')
@@ -67,7 +69,7 @@ with open (args['outputfile'], 'w') as ofile:
                         cid = row[17].split(";")
                         cID = cid[0].split(",")
                         cosmicID = cID[0].replace("ID=COSM", "")
-                        
+
                         # Extract info about changes
                         transriptInfo = row[24].split(":")
                         cdsInfo = "-"
@@ -82,7 +84,7 @@ with open (args['outputfile'], 'w') as ofile:
                             # Print to file
                             ofile.write(args['sampleID'] + "\t" + row[6] + "\t" + cosmicID + "\t3")
                             # Go through all read depth and check if the total read depth is above
-                            count = 1 
+                            count = 1
                             for rd in RDs:
                                 if int(row[12]) >= int(rd):
                                     if count == 1:
@@ -96,8 +98,8 @@ with open (args['outputfile'], 'w') as ofile:
                                         ofile.write("\tlow")
                                 count += 1
                             chr = "chr" + row[1]
-                            ofile.write("\t" + row[12] + "\t" + chr2nc[chr] + "\t" + row[2] + "\t" + row[3] + "\t" + row[4] + "\t" + row[5] + "\t" + row[11] + "\t" + row[10] + "\t" + row[9] + "\t" + row[8] + "\t" + cdsInfo + "\t" + aaInfo + "\t-\t-\t-\t-\t" + transriptInfo[1] + "\t-\t-\t-\n")            
-                                     
+                            ofile.write("\t" + row[12] + "\t" + chr2nc[chr] + "\t" + row[2] + "\t" + row[3] + "\t" + row[4] + "\t" + row[5] + "\t" + row[11] + "\t" + row[10] + "\t" + row[9] + "\t" + row[8] + "\t" + cdsInfo + "\t" + aaInfo + "\t-\t-\t-\t-\t" + transriptInfo[1] + "\t-\t-\t-\n")
+
         if not ifile.closed:
             ifile.close()
     if not ofile.closed:

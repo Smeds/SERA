@@ -3,6 +3,9 @@
 # Script to run jSNPmania
 #SBATCH -p core -n 1
 #SBATCH -t 15:00
+#SBATCH --mail-type=FAIL --mail-user=bioinfo-clinical-genomics-uu@googlegroups.com
+
+. SERA_PATH/includes/load_modules.sh
 
 # Include functions
 . $SERA_PATH/includes/logging.sh;
@@ -19,7 +22,7 @@ fi
 if [[ $FILE_FORMAT == "bed" ]]; then
 	if [[ ${READS} == "true" ]]; then
 		if [[ ${DESIGN_TYPE} == "PCR" ]]; then
-			if [[ -e $ROOT_PATH/SNPmania/${SAMPLEID}.ampliconmapped.variations ]]; then 
+			if [[ -e $ROOT_PATH/SNPmania/${SAMPLEID}.ampliconmapped.variations ]]; then
 				python2.7 $SERA_PATH/bin/pythonscript/calculateGeneCov_bed.py -i ${ROIFILE} -v $ROOT_PATH/SNPmania/${SAMPLEID}.ampliconmapped.variations -o /dev/stdout -r | sort -k3,4 > $ROOT_PATH/RegionCov/${SAMPLEID}.regionCov.txt
 			elif [[ -e $ROOT_PATH/SNPmania/${SAMPLEID}.variations ]]; then
 				python2.7 $SERA_PATH/bin/pythonscript/calculateGeneCov_bed.py -i ${ROIFILE} -v $ROOT_PATH/SNPmania/${SAMPLEID}.variations -o /dev/stdout -r | sort -k3,4 > $ROOT_PATH/RegionCov/${SAMPLEID}.regionCov.txt
@@ -29,7 +32,7 @@ if [[ $FILE_FORMAT == "bed" ]]; then
 		else
 			 ErrorLog "$SAMPLEID" "Only implemented for design type PCR!"
 		fi
-	else 
+	else
 		 ErrorLog "$SAMPLEID" "Only implemented for reads!"
 	fi
 else

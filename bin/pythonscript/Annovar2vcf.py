@@ -1,3 +1,5 @@
+#!/usr/bin/python2.7
+
 import argparse
 import re
 
@@ -68,7 +70,7 @@ with open(args.seqfile, 'r') as seqfile:
 with open(args.output, 'w') as outputfile:
     outputfile.write("##fileformat=VCFv4.2\n")
     outputfile.write("##reference=hg19\n")
-    outputfile.write("CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE\n")
+    outputfile.write("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE\n")
     # Open gene file and add gene info to hash
     with open(args.variantfile, 'r') as variantfile:
         # Go through the file line by line
@@ -92,7 +94,7 @@ with open(args.output, 'w') as outputfile:
                 qual = "."
                 filter = "."
                 info = "."
-                id
+                id = "NA"
 
                 if dbSnp is "-":
                     if cosmic is "-":
@@ -174,7 +176,7 @@ with open(args.output, 'w') as outputfile:
                     qual = "."
                     filter = "."
                     info = "."
-                    id
+                    id = "NA"
 
                     if dbSnp is "-":
                         if cosmic is "-":

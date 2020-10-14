@@ -6,7 +6,7 @@ function removeSteps {
 		if [[ ${steps[${i}]} = ${1} ]]; then
 
 			# set to unaviable if command line ui
-			if [ -z "$INTERFACE" ]; then
+			if [[ -z "$INTERFACE" ]]; then
 				steps[$i+2]="na";
 
 			# remove form list if dialog gui
@@ -29,6 +29,6 @@ fi
 #	removeSteps 1; removeSteps 3; removeSteps 6;
 #fi
 
-#if [ ! $CNV_FILE ]; then
+#if [[ ! $CNV_FILE ]]; then
 #	removeSteps 61;
 #fi

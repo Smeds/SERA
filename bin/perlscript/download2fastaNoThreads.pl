@@ -133,7 +133,7 @@ sub indexfile2fastacmdOpt {
 			my $stop = $columns[3];
 					
 			#fastacmd -d human_genomic -s NC_000017.9 -L 7520186,7520668
-			$fastacmdOpt->{$id}->{'cmdline'} = "-d ".$blastdb." -s ".$chr." -L ".$start.",".$stop,
+			$fastacmdOpt->{$id}->{'cmdline'} = "-d ".$blastdb." -s ".$chr." -L ".$start.",".$stop;
 		    $fastacmdOpt->{$id}->{'table'} = $id."\t".$chr."\t".$start."\t".$stop; 
 		}
      }

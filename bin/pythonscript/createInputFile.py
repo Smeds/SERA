@@ -1,3 +1,5 @@
+#!/usr/bin/python2.7
+
 """
 
 Script for creating input file for sera pipeline
@@ -18,7 +20,7 @@ import module_locator
 parser = argparse.ArgumentParser(description = "This script creates a SERA input file from a file with sample name and barcode")
 parser.add_argument('-i', '--infile', help = 'Input file name', type = str, required = True)
 parser.add_argument('-p', '--project', help = 'Name of the project', type = str, required = True)
-parser.add_argument('-g', '--globals', help = 'Should the HOME or PROJ option be used', choices = ['HOME', 'PROJ'], type = str, required = True)
+parser.add_argument('-g', '--globals', help = 'Should the HOME or PROJ option be used', choices = ['HOME', 'PROJ', 'MORIARTY'], type = str, required = True)
 parser.add_argument('-refDir', '--refDir', help = 'If a directory for reference files is given, they will be copied to the analysis folder', type = str)
 parser.add_argument('-n', '--normal', help = 'Name of normal sample to compare with.', type = str)
 parser.add_argument('-s', '--software', help = 'Queing system for', type = str, default = "SLURM")
@@ -32,11 +34,13 @@ parser.add_argument('-pindelFlags', '--pindelFlags', help = 'Set parameters for 
 parser.add_argument('-snpmaniaFlags', '--snpmaniaFlags', help = 'Set the SNPmania parameters. Default: -a 5 -q 20 -e 0 -am', type = str, default = "-a 5 -q 20 -e 0 -am")
 parser.add_argument('-tumorNormalFlags', '--tumorNormalFlags', help = 'Set parameters for pre-annovar filtering when both tumor and normal are present. Default: -tminRD 20 -nminRD 20 -tminVarRatio 0.10 -nHomoRefRatio 0.95 -am 5', type = str, default = "-tminRD 20 -nminRD 20 -tminVarRatio 0.10 -nHomoRefRatio 0.95 -am 5")
 parser.add_argument('-annovarFlags', '--annovarFlags', help = 'Set parameters for pre-annovar filtering when only tumor is present. Default: -minRD 20 -minVarRatio 0.01 -am 5', type = str, default = " -minRD 20 -minVarRatio 0.01 -am 5")
-parser.add_argument('-clinicalFlags', '--clinicalFlags', help = 'Set parameters for extracting clinical positions. Default: -minRD 30,300 -minVarRatio 0.01 -minAmpRD 5', type = str, default = "-minRD 30,300 -minVarRatio 0.01 -minAmpRD 5")
-parser.add_argument('-pindelClinicalFlags', '--pindelClinicalFlags', help = 'Set parameters for extracting indels from pindel in clinical genes. Default: -minRD 30,300 -minVarRatio 0.01', type = str, default = "-minRD 30,300 -minVarRatio 0.01")
+parser.add_argument('-annovarPlasmaFlags', '--annovarPlasmaFlags', help = 'Set parameters for pre-annovar filtering when only tumor is present. Default: -minRD 20 -minVarRatio 0.001', type = str, default = " -minRD 20 -minVarRatio 0.001")
 parser.add_argument('-pindelAnnovarFlags', '--pindelAnnovarFlags', help = 'Set parameters for pre-annovar filtering of pindel results. Default: -m 20 -v 0.01', type = str, default = "-m 20 -v 0.01")
+parser.add_argument('-pindelAnnovarPlasmaFlags', '--pindelAnnovarPlasmaFlags', help = 'Set parameters for pre-annovar filtering of pindel results. Default: -m 20 -v 0.001', type = str, default = "-m 20 -v 0.001")
+parser.add_argument('-mutationFlags', '--mutationsFlags', help = 'Set parameters for the filtering of all mutations both hotspots and others. Default: -minRD 30,300 -minVaf 0.01', type = str, default = " -minRD 30,300 -minVaf 0.01")
+parser.add_argument('-mutationPlasmaFlags', '--mutationsPlasmaFlags', help = 'Set parameters for the filtering of all mutations both hotspots and others in plasma. Default: -minRD 30,300 -minVaf 0.001', type = str, default = " -minRD 30,300 -minVaf 0.001")
 parser.add_argument('-clinicalInfoFile', '--clinicalInfoFile', help = 'File with clinical hotspot and indel filenames per cancer type. If not wanted set to false! Default: clinicalCancerTypeFiles.txt', type = str, default = "clinicalCancerTypeFiles.txt")
-parser.add_argument('-regionClinicalFlags', '--regionClinicalFlags', help = 'Set parameters for reporting all positions in whole regions. Default: -minRD 30,300', type = str, default = "-minRD 30,300")
+
 
 args = parser.parse_args()
 info = {}
@@ -64,7 +68,7 @@ if not args.clinicalInfoFile.lower() == "false":
                 clinicalInfo[cancer] = {}
 
                 # Retrieve file info for each cancer type and add to dictionary
-                for i in range (0, 6):
+                for i in range (0, 4):
                     line = next(cifile)
                     line = line.strip()
                     infoParts = line.split("=")
@@ -92,229 +96,162 @@ with open(args.infile, 'r') as infile:
             elif re.search(",", line):
                 splitPattern = ','
             lineSplit = line.split(splitPattern)  # Split line by tab
-            info[lineSplit[1]] = {}
-            info[lineSplit[1]]['exp'] = lineSplit[0]
-            info[lineSplit[1]]['barcode'] = lineSplit[2]
-            info[lineSplit[1]]['sNummer'] = "S" + str(count)
-            info[lineSplit[1]]['design'] = lineSplit[3]
-            info[lineSplit[1]]['refseq'] = lineSplit[4]
-            info[lineSplit[1]]['type'] = lineSplit[5].lower().strip()
+            sample = lineSplit[1]
 
-            if len(lineSplit) > 6 and args.normal:
+            info[sample] = {}
+            info[sample]['exp'] = lineSplit[0]
+            info[sample]['sNummer'] = "S" + str(count)
+            info[sample]['barcodeI7'] = lineSplit[2]
+            info[sample]['barcodeI5'] = lineSplit[3]
+            info[sample]['design'] = lineSplit[4]
+            info[sample]['refseq'] = lineSplit[5]
+            info[sample]['cutadapt'] = lineSplit[6]
+            info[sample]['method'] = lineSplit[7].lower().strip()
+            info[sample]['type'] = lineSplit[8].lower().strip()
+            info[sample]['tissue'] = lineSplit[9].lower().strip()
+
+
+            if info[sample]['cutadapt'] == "":
+                info[sample]['cutadapt'] = "false"
+            if info[sample]['barcodeI7'] == "":
+                info[sample]['barcodeI7'] = "false"
+            if info[sample]['barcodeI5'] == "":
+                info[sample]['barcodeI5'] = "false"
+
+            if len(lineSplit) > 10 and args.normal:
                 parser.print_usage()
                 print("\nERROR: The normal has to be given either in the file or the commandline - NOT both!\n\n")
                 sys.exit()
             else:
-                if len(lineSplit) > 6:
-                    info[lineSplit[1]]['normal'] = lineSplit[6]
+                if len(lineSplit) > 10:
+                    info[sample]['normal'] = lineSplit[10]
                 else:
                     if args.normal:
-                        info[lineSplit[1]]['normal'] = args.normal
+                        info[sample]['normal'] = args.normal
                     else:
                         parser.print_usage()
                         sys.exit("\nERROR: Either inputfile needs to have 7 columns with the normal given in the last column or the flag -normal has to be used!\n\n")
+
+            # Set the method type used
+            if info[sample]['method'] == "halo" or info[sample]['method'] == "haloplex":
+                info[sample]['method'] = "haloplex"
+            if info[sample]['method'] == "swift" or info[sample]['method'] == "accamp" or info[sample]['method'] == "AccelAmplicon":
+                info[sample]['method'] = "swift"
+
             # If clinical analysis is wanted add file names otherwise add false
             if not args.clinicalInfoFile.lower() == "false":
                 # ## COLON
-                if info[lineSplit[1]]['type'] == "colon" or info[lineSplit[1]]['type'] == "kolon" :
-                    info[lineSplit[1]]['tissue'] = "colon"
+                if info[sample]['tissue'] == "colon" or info[sample]['tissue'] == "kolon" :
+                    info[sample]['tissue'] = "colon"
                     # If the given hotspot file name is false keep it otherwise add file path
                     if re.match("false", clinicalInfo['colon']['hotspot']):
-                        info[lineSplit[1]]['hotspot'] = "false"
+                        info[sample]['hotspot'] = "false"
                     else:
-                        info[lineSplit[1]]['hotspot'] = "$FILE_PATH/refFiles/" + clinicalInfo["colon"]['hotspot']
-                    # If the given indel file name is false keep it otherwise add file path
-                    if re.match("false", clinicalInfo["colon"]['indel']):
-                        info[lineSplit[1]]['indel'] = "false"
-                    else:
-                        info[lineSplit[1]]['indel'] = "$FILE_PATH/refFiles/" + clinicalInfo["colon"]['indel']
-
-                    # If the given region file name is false keep it otherwise add file path
-                    if re.match("false", clinicalInfo["colon"]['region']):
-                        info[lineSplit[1]]['region'] = "false"
-                    else:
-                        info[lineSplit[1]]['region'] = "$FILE_PATH/refFiles/" + clinicalInfo["colon"]['region']
-
-                    # If the given keep file name is false keep it otherwise add file path
-                    if re.match("false", clinicalInfo["colon"]['keep']):
-                        info[lineSplit[1]]['keep'] = "false"
-                    else:
-                        info[lineSplit[1]]['keep'] = "$FILE_PATH/refFiles/" + clinicalInfo["colon"]['keep']
+                        info[sample]['hotspot'] = "$FILE_PATH/refFiles/" + clinicalInfo["colon"]['hotspot']
 
                     # If the given amplification file name is false keep it otherwise add file path
                     if re.match("false", clinicalInfo["colon"]['amplification']):
-                        info[lineSplit[1]]['amplification'] = "false"
+                        info[sample]['amplification'] = "false"
                     else:
-                        info[lineSplit[1]]['amplification'] = "$FILE_PATH/refFiles/" + clinicalInfo["colon"]['amplification']
+                        info[sample]['amplification'] = "$FILE_PATH/refFiles/" + clinicalInfo["colon"]['amplification']
 
                     # If the given background file name is false keep it otherwise add file path
                     if re.match("false", clinicalInfo["colon"]['background']):
-                        info[lineSplit[1]]['background'] = "false"
+                        info[sample]['background'] = "false"
                     else:
-                        info[lineSplit[1]]['background'] = "$FILE_PATH/refFiles/" + clinicalInfo["colon"]['background']
+                        info[sample]['background'] = "$FILE_PATH/refFiles/" + clinicalInfo["colon"]['background']
 
                 # ## LUNG
-                elif info[lineSplit[1]]['type'] == "lung" or info[lineSplit[1]]['type'] == "lunga":
-                    info[lineSplit[1]]['tissue'] = "lung"
+                elif info[sample]['tissue'] == "lung" or info[sample]['tissue'] == "lunga":
+                    info[sample]['tissue'] = "lung"
                     # If the given hotspot file name is false keep it otherwise add file path
                     if re.match("false", clinicalInfo["lung"]['hotspot']):
-                        info[lineSplit[1]]['hotspot'] = "false"
+                        info[sample]['hotspot'] = "false"
                     else:
-                        info[lineSplit[1]]['hotspot'] = "$FILE_PATH/refFiles/" + clinicalInfo["lung"]['hotspot']
-                    # If the given indel file name is false keep it otherwise add file path
-                    if re.match("false", clinicalInfo["lung"]['indel']):
-                        info[lineSplit[1]]['indel'] = "false"
-                    else:
-                        info[lineSplit[1]]['indel'] = "$FILE_PATH/refFiles/" + clinicalInfo["lung"]['indel']
-
-                    # If the given region file name is false keep it otherwise add file path
-                    if re.match("false", clinicalInfo["lung"]['region']):
-                        info[lineSplit[1]]['region'] = "false"
-                    else:
-                        info[lineSplit[1]]['region'] = "$FILE_PATH/refFiles/" + clinicalInfo["lung"]['region']
-
-                     # If the given keep file name is false keep it otherwise add file path
-                    if re.match("false", clinicalInfo["lung"]['keep']):
-                        info[lineSplit[1]]['keep'] = "false"
-                    else:
-                        info[lineSplit[1]]['keep'] = "$FILE_PATH/refFiles/" + clinicalInfo["lung"]['keep']
+                        info[sample]['hotspot'] = "$FILE_PATH/refFiles/" + clinicalInfo["lung"]['hotspot']
 
                     # If the given amplification file name is false keep it otherwise add file path
                     if re.match("false", clinicalInfo["lung"]['amplification']):
-                        info[lineSplit[1]]['amplification'] = "false"
+                        info[sample]['amplification'] = "false"
                     else:
-                        info[lineSplit[1]]['amplification'] = "$FILE_PATH/refFiles/" + clinicalInfo["lung"]['amplification']
+                        info[sample]['amplification'] = "$FILE_PATH/refFiles/" + clinicalInfo["lung"]['amplification']
 
                     # If the given background file name is false keep it otherwise add file path
                     if re.match("false", clinicalInfo["lung"]['background']):
-                        info[lineSplit[1]]['background'] = "false"
+                        info[sample]['background'] = "false"
                     else:
-                        info[lineSplit[1]]['background'] = "$FILE_PATH/refFiles/" + clinicalInfo["lung"]['background']
+                        info[sample]['background'] = "$FILE_PATH/refFiles/" + clinicalInfo["lung"]['background']
 
                 # ## GIST
-                elif info[lineSplit[1]]['type'] == "gist":
-                    info[lineSplit[1]]['tissue'] = "gist"
+                elif info[sample]['tissue'] == "gist":
+                    info[sample]['tissue'] = "gist"
                     # If the given hotspot file name is false keep it otherwise add file path
                     if re.match("false", clinicalInfo["gist"]['hotspot']):
-                        info[lineSplit[1]]['hotspot'] = "false"
+                        info[sample]['hotspot'] = "false"
                     else:
-                        info[lineSplit[1]]['hotspot'] = "$FILE_PATH/refFiles/" + clinicalInfo["gist"]['hotspot']
-                    # If the given indel file name is false keep it otherwise add file path
-                    if re.match("false", clinicalInfo["gist"]['indel']):
-                        info[lineSplit[1]]['indel'] = "false"
-                    else:
-                        info[lineSplit[1]]['indel'] = "$FILE_PATH/refFiles/" + clinicalInfo["gist"]['indel']
-
-                    # If the given region file name is false keep it otherwise add file path
-                    if re.match("false", clinicalInfo["gist"]['region']):
-                        info[lineSplit[1]]['region'] = "false"
-                    else:
-                        info[lineSplit[1]]['region'] = "$FILE_PATH/refFiles/" + clinicalInfo["gist"]['region']
-
-                     # If the given keep file name is false keep it otherwise add file path
-                    if re.match("false", clinicalInfo["gist"]['keep']):
-                        info[lineSplit[1]]['keep'] = "false"
-                    else:
-                        info[lineSplit[1]]['keep'] = "$FILE_PATH/refFiles/" + clinicalInfo["gist"]['keep']
+                        info[sample]['hotspot'] = "$FILE_PATH/refFiles/" + clinicalInfo["gist"]['hotspot']
 
                     # If the given amplification file name is false keep it otherwise add file path
                     if re.match("false", clinicalInfo["gist"]['amplification']):
-                        info[lineSplit[1]]['amplification'] = "false"
+                        info[sample]['amplification'] = "false"
                     else:
-                        info[lineSplit[1]]['amplification'] = "$FILE_PATH/refFiles/" + clinicalInfo["gist"]['amplification']
+                        info[sample]['amplification'] = "$FILE_PATH/refFiles/" + clinicalInfo["gist"]['amplification']
 
                     # If the given background file name is false keep it otherwise add file path
                     if re.match("false", clinicalInfo["gist"]['background']):
-                        info[lineSplit[1]]['background'] = "false"
+                        info[sample]['background'] = "false"
                     else:
-                        info[lineSplit[1]]['background'] = "$FILE_PATH/refFiles/" + clinicalInfo["gist"]['background']
+                        info[sample]['background'] = "$FILE_PATH/refFiles/" + clinicalInfo["gist"]['background']
 
                 # ## OVARIAL
-                elif info[lineSplit[1]]['type'] == "ovarial":
-                    info[lineSplit[1]]['tissue'] = "ovarial"
+                elif info[sample]['tissue'] == "ovarial" or info[sample]['tissue'] == "ovarian" or info[sample]['tissue'] == "ovary" :
+                    info[sample]['tissue'] = "ovarial"
                     # If the given hotspot file name is false keep it otherwise add file path
                     if re.match("false", clinicalInfo["ovarial"]['hotspot']):
-                        info[lineSplit[1]]['hotspot'] = "false"
+                        info[sample]['hotspot'] = "false"
                     else:
-                        info[lineSplit[1]]['hotspot'] = "$FILE_PATH/refFiles/" + clinicalInfo["ovarial"]['hotspot']
-                    # If the given indel file name is false keep it otherwise add file path
-                    if re.match("false", clinicalInfo["ovarial"]['indel']):
-                        info[lineSplit[1]]['indel'] = "false"
-                    else:
-                        info[lineSplit[1]]['indel'] = "$FILE_PATH/refFiles/" + clinicalInfo["ovarial"]['indel']
-
-                    # If the given region file name is false keep it otherwise add file path
-                    if re.match("false", clinicalInfo["ovarial"]['region']):
-                        info[lineSplit[1]]['region'] = "false"
-                    else:
-                        info[lineSplit[1]]['region'] = "$FILE_PATH/refFiles/" + clinicalInfo["ovarial"]['region']
-
-                     # If the given keep file name is false keep it otherwise add file path
-                    if re.match("false", clinicalInfo["ovarial"]['keep']):
-                        info[lineSplit[1]]['keep'] = "false"
-                    else:
-                        info[lineSplit[1]]['keep'] = "$FILE_PATH/refFiles/" + clinicalInfo["ovarial"]['keep']
+                        info[sample]['hotspot'] = "$FILE_PATH/refFiles/" + clinicalInfo["ovarial"]['hotspot']
 
                     # If the given amplification file name is false keep it otherwise add file path
                     if re.match("false", clinicalInfo["ovarial"]['amplification']):
-                        info[lineSplit[1]]['amplification'] = "false"
+                        info[sample]['amplification'] = "false"
                     else:
-                        info[lineSplit[1]]['amplification'] = "$FILE_PATH/refFiles/" + clinicalInfo["ovarial"]['amplification']
+                        info[sample]['amplification'] = "$FILE_PATH/refFiles/" + clinicalInfo["ovarial"]['amplification']
 
                     # If the given background file name is false keep it otherwise add file path
                     if re.match("false", clinicalInfo["ovarial"]['background']):
-                        info[lineSplit[1]]['background'] = "false"
+                        info[sample]['background'] = "false"
                     else:
-                        info[lineSplit[1]]['background'] = "$FILE_PATH/refFiles/" + clinicalInfo["ovarial"]['background']
+                        info[sample]['background'] = "$FILE_PATH/refFiles/" + clinicalInfo["ovarial"]['background']
 
                 # ## MELANOM
-                elif info[lineSplit[1]]['type'] == "melanom" or info[lineSplit[1]]['type'] == "melanoma":
-                    info[lineSplit[1]]['tissue'] = "melanom"
+                elif info[sample]['tissue'] == "melanom" or info[sample]['tissue'] == "melanoma":
+                    info[sample]['tissue'] = "melanom"
                     # If the given hotspot file name is false keep it otherwise add file path
                     if re.match("false", clinicalInfo["melanom"]['hotspot']):
-                        info[lineSplit[1]]['hotspot'] = "false"
+                        info[sample]['hotspot'] = "false"
                     else:
-                        info[lineSplit[1]]['hotspot'] = "$FILE_PATH/refFiles/" + clinicalInfo["melanom"]['hotspot']
-                    # If the given indel file name is false keep it otherwise add file path
-                    if re.match("false", clinicalInfo["melanom"]['indel']):
-                        info[lineSplit[1]]['indel'] = "false"
-                    else:
-                        info[lineSplit[1]]['indel'] = "$FILE_PATH/refFiles/" + clinicalInfo["melanom"]['indel']
-
-                    # If the given region file name is false keep it otherwise add file path
-                    if re.match("false", clinicalInfo["melanom"]['region']):
-                        info[lineSplit[1]]['region'] = "false"
-                    else:
-                        info[lineSplit[1]]['region'] = "$FILE_PATH/refFiles/" + clinicalInfo["ovarial"]['region']
-
-                     # If the given keep file name is false keep it otherwise add file path
-                    if re.match("false", clinicalInfo["melanom"]['keep']):
-                        info[lineSplit[1]]['keep'] = "false"
-                    else:
-                        info[lineSplit[1]]['keep'] = "$FILE_PATH/refFiles/" + clinicalInfo["melanom"]['keep']
+                        info[sample]['hotspot'] = "$FILE_PATH/refFiles/" + clinicalInfo["melanom"]['hotspot']
 
                     # If the given amplification file name is false keep it otherwise add file path
                     if re.match("false", clinicalInfo["melanom"]['amplification']):
-                        info[lineSplit[1]]['amplification'] = "false"
+                        info[sample]['amplification'] = "false"
                     else:
-                        info[lineSplit[1]]['amplification'] = "$FILE_PATH/refFiles/" + clinicalInfo["melanom"]['amplification']
+                        info[sample]['amplification'] = "$FILE_PATH/refFiles/" + clinicalInfo["melanom"]['amplification']
 
                     # If the given background file name is false keep it otherwise add file path
                     if re.match("false", clinicalInfo["melanom"]['background']):
-                        info[lineSplit[1]]['background'] = "false"
+                        info[sample]['background'] = "false"
                     else:
-                        info[lineSplit[1]]['background'] = "$FILE_PATH/refFiles/" + clinicalInfo["melanom"]['background']
+                        info[sample]['background'] = "$FILE_PATH/refFiles/" + clinicalInfo["melanom"]['background']
 
                 else:
-                    print ("\nERROR: Unknown cancer type given in input file" + info[lineSplit[1]]['type'] + ", so far only Lung and Colon are supported!\n\n")
+                    print ("\nERROR: Unknown cancer type given in input file " + info[sample]['tissue'] + ", so far only lung, colon, GIST, melanoma and ovarial are supported!\n\n")
                     sys.exit()
             else:
-                info[lineSplit[1]]['hotspot'] = "false"
-                info[lineSplit[1]]['indel'] = "false"
-                info[lineSplit[1]]['region'] = "false"
-                info[lineSplit[1]]['keep'] = "false"
-                info[lineSplit[1]]['amplification'] = "false"
-                info[lineSplit[1]]['background'] = "false"
+                info[sample]['hotspot'] = "false"
+                info[sample]['amplification'] = "false"
+                info[sample]['background'] = "false"
 
     if not infile.closed:
         infile.close()
@@ -332,27 +269,45 @@ for sample in infoSort:
 rawPath = "/proj/" + args.project + "/private/" + info[sample]['exp'] + "_rawdata"
 filePath = "/proj/" + args.project + "/nobackup/private/" + info[sample]['exp']
 
+# Create folder if it doesn't exist and set permissions
 if not os.path.exists(rawPath):
-    os.makedirs(rawPath)
+    os.makedirs(rawPath, 0774)
+
+# Create folder if it doesn't exist and set permissions
 if not os.path.exists(filePath):
-    os.makedirs(filePath)
+    os.makedirs(filePath, 0774)
 
 # Check if a reference file dir is given, if so copy the files to refFiles in the analysis folder
 if args.refDir:
     # List files in the reference file directory
     refDir_files = os.listdir(args.refDir)
     refFilePath = filePath + "/refFiles"  # Setting output folder path
-    # Check if the output folder exists, if not create
+    # Check if the output folder exists, if not create and set permissions
     if not os.path.exists(refFilePath):
-        os.makedirs(refFilePath)
+        os.makedirs(refFilePath, 0774)
     # Go through all files in the reference file dir
     for file_name in refDir_files:
         full_file_name = os.path.join(args.refDir, file_name)
         # Check that it is a file
         if (os.path.isfile(full_file_name)):
              destFile = refFilePath + "/" + file_name  # Set the destination file name
-             shutil.copy(full_file_name, destFile)  # Copy
+             os.system("rsync -rlptD " + full_file_name + " " + destFile)  # Copy
+             if not re.match((oct(os.stat(destFile).st_mode & 0777)), "0664"):  # Check if the file has permission to read and write for all in the group
+                 os.chmod(destFile, 0664)  # If not change the permissions
 
+new_format = re.compile(".+/([0-9]{8})_([A-Za-z0-9-]+)$")
+new_format_rerun = re.compile(".+/([0-9]{8})_([A-Za-z0-9-]+)_([0-9]+)")
+
+def extract_date_user_rerun(line):
+    result = new_format_rerun.match(line)
+    if result:
+        return result.group(1),result.group(2),True
+    result = new_format.match(line)
+    if result:
+        return result.group(1),result.group(2),False
+    raise Exception("Unable to parse input file for experiment name, user and rerun")
+
+(date, user, rerun) = extract_date_user_rerun(filePath)
 
 
 output = filePath + "/inputFile"
@@ -378,12 +333,14 @@ with (open(output, mode = 'w'))as outfile:
     outfile.write("export SNPMANIAFLAGS=\"" + args.snpmaniaFlags + "\";\n")
     outfile.write("export TUMOR_NORMAL_FLAGS=\"" + args.tumorNormalFlags + "\";\n")
     outfile.write("export ANNOVAR_FLAGS=\"" + args.annovarFlags + "\";\n")
+    outfile.write("export ANNOVAR_PLASMA_FLAGS=\"" + args.annovarPlasmaFlags + "\";\n")
     outfile.write("export PINDEL_ANNOVAR_FLAGS=\"" + args.pindelAnnovarFlags + "\";\n")
+    outfile.write("export PINDEL_ANNOVAR_PLASMA_FLAGS=\"" + args.pindelAnnovarPlasmaFlags + "\";\n")
+    outfile.write("export MUTATION_FLAGS=\"" + args.mutationsFlags + "\";\n")
+    outfile.write("export MUTATION_PLASMA_FLAGS=\"" + args.mutationsPlasmaFlags + "\";\n")
 
-    outfile.write("\n## Clinical filtering\n")
-    outfile.write("export CLINICAL_FLAGS=\"" + args.clinicalFlags + "\";\n")
-    outfile.write("export PINDEL_CLINICAL_FLAGS=\"" + args.pindelClinicalFlags + "\";\n")
-    outfile.write("export REGION_CLINICAL_FLAGS=\"" + args.regionClinicalFlags + "\";\n")
+
+
 
     outfile.write('\n################################\n### SAMPLE SETTINGS\n################################\n\n')
 
@@ -391,21 +348,39 @@ with (open(output, mode = 'w'))as outfile:
     for sample in infoSort:
         outfile.write("let COUNT=COUNT+1;\n")
         outfile.write ("SAMPLEID_ARR_[${COUNT}]=\"" + sample + "\";\n")
-        outfile.write ("SEQUENCING_TAG_ARR_[${COUNT}]=\"" + info[sample]['barcode'] + "\";\n")
+        outfile.write ("BARCODE_I7_ARR_[${COUNT}]=\"" + info[sample]['barcodeI7'] + "\";\n")
+        outfile.write ("BARCODE_I5_ARR_[${COUNT}]=\"" + info[sample]['barcodeI5'] + "\";\n")
+        outfile.write ("CUTADAPT_PREFIX_ARR_[${COUNT}]=\"" + info[sample]['cutadapt'] + "\";\n")
         outfile.write ("RAWDATA_PE1_ARR_[${COUNT}]=\"$RAW_PATH/" + sample + "_" + info[sample]['sNummer'] + "_L001_R1_001.fastq.gz" + "\";\n")
         outfile.write ("RAWDATA_PE2_ARR_[${COUNT}]=\"$RAW_PATH/" + sample + "_" + info[sample]['sNummer'] + "_L001_R2_001.fastq.gz" + "\";\n")
         outfile.write ("RAWDATA_INDEX_ARR_[${COUNT}]=\"false\";\n")
         outfile.write ("REFSEQ_ARR_[${COUNT}]=\"" + info[sample]['refseq'] + "\";\n")
-        outfile.write ("ROIFILE_ARR_[${COUNT}]=\"$FILE_PATH/refFiles/" + info[sample]['design'] + "_Regions.bed" + "\";\n")
-        outfile.write ("SELECTIONFILE_ARR_[${COUNT}]=\"$FILE_PATH/refFiles/" + info[sample]['design'] + "_Amplicons.bed" + "\";\n")
+        if re.match(info[sample]['method'], "haloplex"):
+            outfile.write ("ROIFILE_ARR_[${COUNT}]=\"$FILE_PATH/refFiles/" + info[sample]['design'] + "_Regions.bed" + "\";\n")
+        else:
+            outfile.write ("ROIFILE_ARR_[${COUNT}]=\"$FILE_PATH/refFiles/" + info[sample]['design'] + ".bed" + "\";\n")
+        if re.match(info[sample]['method'], "haloplex"):
+            outfile.write ("SELECTIONFILE_ARR_[${COUNT}]=\"$FILE_PATH/refFiles/" + info[sample]['design'] + "_Amplicons.bed" + "\";\n")
+        else:
+            outfile.write ("SELECTIONFILE_ARR_[${COUNT}]=\"$FILE_PATH/refFiles/" + info[sample]['design'] + ".bed" + "\";\n")
         outfile.write ("NORMAL_SAMPLEID_ARR_[${COUNT}]=\"" + info[sample]['normal'] + "\";\n")
         outfile.write ("HOTSPOTFILE_ARR_[${COUNT}]=\"" + info[sample]['hotspot'] + "\";\n")
-        outfile.write ("INDELFILE_ARR_[${COUNT}]=\"" + info[sample]['indel'] + "\";\n")
-        outfile.write ("REGIONFILE_ARR_[${COUNT}]=\"" + info[sample]['region'] + "\";\n")
-        outfile.write ("KEEPFILE_ARR_[${COUNT}]=\"" + info[sample]['keep'] + "\";\n")
         outfile.write ("AMPLIFICATIONFILE_ARR_[${COUNT}]=\"" + info[sample]['amplification'] + "\";\n")
         outfile.write ("BACKGROUNDFILE_ARR_[${COUNT}]=\"" + info[sample]['background'] + "\";\n")
-        outfile.write ("TYPE_ARR_[${COUNT}]=\"" + info[sample]['tissue'] + "\";\n")
+        outfile.write ("METHOD_ARR_[${COUNT}]=\"" + info[sample]['method'] + "\";\n")
+        outfile.write ("TYPE_ARR_[${COUNT}]=\"" + info[sample]['type'] + "\";\n")
+        outfile.write ("TISSUE_ARR_[${COUNT}]=\"" + info[sample]['tissue'] + "\";\n")
         outfile.write ("\n")
     if not outfile.closed:
         outfile.close()
+
+with open(jsonPath + experiment +".json", mode="w") as json_output:
+    for sample in sorted(info):
+        json_output.write(str(
+            {'experiment.wp': "WP1",
+             'experiment.prep': info[sample]['type'].upper(),
+             'experiment.method': info[sample]['method'],
+             'experiment.user': user,
+             'experiment.rerun': rerun,
+             'experiment.tissue': info[sample]['tissue'],
+             'experiment.sample': sample}) + "\n")

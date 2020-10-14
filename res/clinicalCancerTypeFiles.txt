@@ -1,39 +1,29 @@
 TYPE=colon
-HOTSPOT=Hotspots_Colon_20150902.csv
-INDEL=Indels_Colon_20150422.txt
-REGION=Regions_Colon_20160225.bed
-KEEP=false
+HOTSPOT=Mutations_Colon_20171219.csv
 AMPLIFICATION=Amplification_Colon_20160226.txt
 BACKGROUND=Background_Colon_20160226.txt
 
 TYPE=lung
-HOTSPOT=Hotspots_Lung_20160304.csv
-INDEL=Indels_Lung_20160304.txt
-REGION=Regions_Lung_20160401.bed
-KEEP=Keep_Lung_20151013.txt
+HOTSPOT=Mutations_Lung_20190211.csv
 AMPLIFICATION=Amplification_Lung_20160226.txt
 BACKGROUND=Background_Lung_20160226.txt
 
 TYPE=gist
-HOTSPOT=Hotspots_Gist_20160113.csv
-INDEL=Indels_Gist_20150918.txt
-REGION=Regions_Gist_20160114.bed
-KEEP=false
+HOTSPOT=Mutations_Gist_20190211.csv
 AMPLIFICATION=false
 BACKGROUND=false
 
 TYPE=melanom
-HOTSPOT=Hotspots_Melanom_20160226.csv
-INDEL=Indels_Melanom_20160226.txt
-REGION=Regions_Melanom_20160226.bed
-KEEP=false
+HOTSPOT=Mutations_Melanom_20190211.csv
 AMPLIFICATION=false
 BACKGROUND=false
 
 TYPE=ovarial
-HOTSPOT=false
-INDEL=false
-REGION=false
-KEEP=false
+HOTSPOT=Mutations_Ovarial_20170125.csv
+AMPLIFICATION=false
+BACKGROUND=false
+
+TYPE=breast
+HOTSPOT=Mutations_Breast_20191112.csv
 AMPLIFICATION=false
 BACKGROUND=false
